@@ -14,7 +14,8 @@ Pipeline (per instance):
     4. Compute Chamfer Distance = mean(||r->g||^2) + mean(||g->r||^2),
        where each direction uses cKDTree nearest neighbor.
     5. Yaw-aligned variant: enumerate 4 yaw rotations of the generated
-       cloud (0/90/180/270 deg around Z) and report the minimum CD.
+       cloud (0/90/180/270 deg around Y, matching glTF Y-up export) and
+       report the minimum CD.
        This is the shape-side analogue of the Hungarian matching used
        in image_similarity.py to absorb canonical-orientation mismatch.
 
@@ -114,12 +115,14 @@ def chamfer_squared(a, b):
 
 
 def yaw_rotated(pts, deg):
-    """Rotate point cloud around Z axis by `deg` degrees."""
+    """Rotate Y-up glTF point cloud around vertical Y axis by `deg` degrees."""
     if deg == 0:
         return pts
     th = np.deg2rad(deg)
     c, s = np.cos(th), np.sin(th)
-    R = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]], dtype=pts.dtype)
+    # core/export_glb.py exports GLBs with export_yup=True (glTF Y-up),
+    # and trimesh.load preserves Y-up coordinates, so horizontal yaw rotates around Y.
+    R = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=pts.dtype)
     return pts @ R.T
 
 
